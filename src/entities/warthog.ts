@@ -21,8 +21,17 @@ const BOARD_DISTANCE = 60;
 // Drive state lives in WorldState.warthogDrive — not module-level variables —
 // so there are no hidden mutable singletons in this module.
 
+function isTextInputFocused(): boolean {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || (el as HTMLElement).isContentEditable;
+}
+
 export function initWarthogInput(state: WorldState): void {
   window.addEventListener("keydown", (e: KeyboardEvent) => {
+    // Never steal keys from text inputs
+    if (isTextInputFocused()) return;
     const d = state.warthogDrive;
     switch (e.key) {
       case "e": case "E":

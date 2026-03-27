@@ -41,12 +41,21 @@ function keyToField(key: string): keyof InputState | null {
   }
 }
 
+function isTextInputFocused(): boolean {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || (el as HTMLElement).isContentEditable;
+}
+
 export function initInput(): void {
   window.addEventListener("keydown", (e) => {
     touchInput();
     const field = keyToField(e.key);
     if (!field) return;
-    // Prevent page scroll for arrow/space
+    // Never steal keys from text inputs — let the browser handle them normally
+    if (isTextInputFocused()) return;
+    // Prevent page scroll for arrow/space only when game has control
     if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key)) {
       e.preventDefault();
     }
