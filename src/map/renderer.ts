@@ -191,25 +191,19 @@ function drawTile(
       }
       break;
     case TILE_TREE: {
-      // Trunk
+      // Base pass only: grass background + trunk stub
+      // The canopy is drawn in the tall-sprite pass (after entities) via drawTallSprites()
       ctx.fillStyle = colors.grass;
       ctx.fillRect(x, y, TILE, TILE);
       ctx.fillStyle = "#5a3a1a";
       ctx.fillRect(x + 8, y + 10, 4, TILE - 10);
-      // Canopy
-      ctx.fillStyle = colors.tree;
-      ctx.fillRect(x + 2, y + 1, TILE - 4, 12);
-      ctx.fillStyle = colors.treeTop;
-      ctx.fillRect(x + 4, y + 1, TILE - 8, 8);
       break;
     }
     case TILE_ROCK:
+      // Base pass only: grass background
+      // The rock body is drawn in the tall-sprite pass (after entities) via drawTallSprites()
       ctx.fillStyle = colors.grass;
       ctx.fillRect(x, y, TILE, TILE);
-      ctx.fillStyle = colors.rock;
-      ctx.fillRect(x + 3, y + 4, TILE - 6, TILE - 8);
-      ctx.fillStyle = colors.rockLight;
-      ctx.fillRect(x + 5, y + 5, 5, 4);
       break;
     case TILE_FOUNTAIN: {
       ctx.fillStyle = colors.path;
@@ -260,4 +254,38 @@ export function getOrBuildTileCache(
 
 export function invalidateTileCache(): void {
   tileCache = null;
+}
+
+/**
+ * Draw the top portions of tall tiles (tree canopies, rock bodies) directly onto the
+ * main canvas AFTER all entity sprites have been rendered. This makes trees and rocks
+ * visually occlude players and NPCs that pass behind them, without any z-order sorting
+ * or compositing tricks.
+ */
+export function drawTallSprites(
+  ctx: CanvasRenderingContext2D,
+  map: Uint8Array[],
+  season: Season
+): void {
+  const colors = getTileColors(season);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const tile = map[r][c];
+      const x = c * TILE;
+      const y = r * TILE;
+      if (tile === TILE_TREE) {
+        // Canopy on top of entities
+        ctx.fillStyle = colors.tree;
+        ctx.fillRect(x + 2, y + 1, TILE - 4, 12);
+        ctx.fillStyle = colors.treeTop;
+        ctx.fillRect(x + 4, y + 1, TILE - 8, 8);
+      } else if (tile === TILE_ROCK) {
+        // Rock body on top of entities
+        ctx.fillStyle = colors.rock;
+        ctx.fillRect(x + 3, y + 4, TILE - 6, TILE - 8);
+        ctx.fillStyle = colors.rockLight;
+        ctx.fillRect(x + 5, y + 5, 5, 4);
+      }
+    }
+  }
 }

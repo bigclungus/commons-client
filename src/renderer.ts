@@ -3,7 +3,7 @@
 
 import { WorldState, LocalPlayer, RemotePlayer, NPC, Facing, TILE, CANVAS_W, CANVAS_H, NPC_HIT_RADIUS,
   CONGRESS_BUILDING_COL, CONGRESS_BUILDING_LABEL_ROW } from "./state.ts";
-import { getOrBuildTileCache, getSeason, getTileColors } from "./map/renderer.ts";
+import { getOrBuildTileCache, getSeason, getTileColors, drawTallSprites } from "./map/renderer.ts";
 import { getWinner, getSpriteId, NPC_DISPLAY_NAMES } from "./sprites.ts";
 import { drawWarthog } from "./entities/warthog.ts";
 import { drawWalkers } from "./entities/walker.ts";
@@ -377,6 +377,12 @@ export function render(state: WorldState, ctx: CanvasRenderingContext2D, frame: 
     const p = state.localPlayer;
     drawPlayerBody(ctx, p.x, p.y, p.color, p.facing as Facing, p.hopFrame, p.isAway, true);
     drawPlayerLabel(ctx, p.x, p.y, p.name, p.hopFrame);
+  }
+
+  // Tall-sprite overlay: tree canopies and rock bodies drawn after entities so they occlude
+  // players/NPCs that pass behind them (painter's algorithm second pass)
+  if (state.map) {
+    drawTallSprites(ctx, state.map, season);
   }
 
   // Congress building label (chunk 0,0 only)
