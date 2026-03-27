@@ -14,6 +14,7 @@ import { TILE, ROWS, COLS } from "../state.ts";
 const STORAGE_KEY = "commons_worn_tiles";
 const WORN_THRESHOLD = 10;
 const DIRT_THRESHOLD = 30;
+const SAVE_EVERY_N_VISITS = 30;
 
 // Tile counts for the current session (keyed "tileX,tileY" in chunk coords)
 interface WornStore {
@@ -29,8 +30,8 @@ function loadStore(): WornStore {
         return parsed as WornStore;
       }
     }
-  } catch {
-    // Corrupted — reset
+  } catch (e) {
+    console.warn('[worn-paths] corrupt localStorage, resetting:', e)
   }
   return { counts: {} };
 }
@@ -40,8 +41,8 @@ let store: WornStore = loadStore();
 function saveStore(): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  } catch {
-    // Storage full or unavailable — no-op
+  } catch (e) {
+    console.warn('[worn-paths] localStorage write failed:', e)
   }
 }
 
@@ -77,7 +78,7 @@ export function recordTileVisit(tileX: number, tileY: number): void {
   // Persist every 30 visits to avoid thrashing localStorage.
   // The visibilitychange/beforeunload handlers above ensure the remainder
   // is flushed when the tab closes.
-  if (store.counts[key] % 30 === 0) {
+  if (store.counts[key] % SAVE_EVERY_N_VISITS === 0) {
     saveStore();
   }
 }
