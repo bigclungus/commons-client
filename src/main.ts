@@ -185,7 +185,7 @@ function loop(now: number): void {
     if (now - lastMoveSent >= MOVE_SEND_INTERVAL_MS) {
       lastMoveSeq = state.localPlayer.inputSeq;
       lastMoveSent = now;
-      sendMove(state, dx, dy);
+      sendMove(state);
     }
   }
 

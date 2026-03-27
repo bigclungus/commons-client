@@ -23,7 +23,12 @@ interface WornStore {
 function loadStore(): WornStore {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as WornStore;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && typeof parsed.counts === 'object' && parsed.counts !== null) {
+        return parsed as WornStore;
+      }
+    }
   } catch {
     // Corrupted — reset
   }

@@ -13,6 +13,7 @@ import { invalidateTileCache } from "./map/renderer.ts";
 import { mergeServerWornPaths } from "./map/worn-paths.ts";
 
 const RECONNECT_DELAY_MS = 3000;
+const decoder = new TextDecoder();
 
 // Fix 2: move sequencing — reject reconciliation from stale server echoes.
 // Only reconcile if the server has processed an input within MOVE_BUFFER_SIZE
@@ -25,7 +26,7 @@ let state: WorldState;
 
 // -- Outbound helpers -------------------------------------------------------
 
-export function sendMove(state: WorldState, dx: number, dy: number): void {
+export function sendMove(state: WorldState): void {
   if (!ws || ws.readyState !== WebSocket.OPEN || !state.localPlayer) return;
   const player = state.localPlayer;
   ws.send(JSON.stringify({
@@ -86,9 +87,7 @@ function handleWelcome(msg: any): void {
 // performance.now() ms. Continuously calibrated via EMA over 8 ticks to
 // smooth out jitter without locking in a stale first-sample estimate.
 const EMA_ALPHA = 0.1;
-const EMA_WARMUP = 8;
 let serverTimeOffsetEMA: number | null = null;
-let serverTimeOffsetSamples = 0;
 
 function serverTsToClientTs(serverTs: number): number {
   const sample = performance.now() - serverTs;
@@ -97,7 +96,6 @@ function serverTsToClientTs(serverTs: number): number {
   } else {
     serverTimeOffsetEMA = EMA_ALPHA * sample + (1 - EMA_ALPHA) * serverTimeOffsetEMA;
   }
-  serverTimeOffsetSamples++;
   return serverTs + serverTimeOffsetEMA;
 }
 
@@ -326,7 +324,7 @@ function onMessage(e: MessageEvent): void {
   let msg: any;
   try {
     const raw = e.data instanceof ArrayBuffer
-      ? new TextDecoder().decode(e.data)
+      ? decoder.decode(e.data)
       : e.data;
     msg = JSON.parse(raw);
   } catch {
