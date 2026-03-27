@@ -82,9 +82,10 @@ export function tickWarthog(
   state.seatedInWarthog = warthog.seats.includes(localPlayer.socketId);
 
   // WASD driving — only if we are driver (seat 0)
+  // Multiply by 10 so warthog moves ~10x foot speed (server applies its own *2 multiplier).
   if (state.seatedInWarthog && warthog.seats[0] === localPlayer.socketId) {
-    const dx = (d.right ? 1 : 0) - (d.left ? 1 : 0);
-    const dy = (d.down  ? 1 : 0) - (d.up   ? 1 : 0);
+    const dx = ((d.right ? 1 : 0) - (d.left ? 1 : 0)) * 10;
+    const dy = ((d.down  ? 1 : 0) - (d.up   ? 1 : 0)) * 10;
     sendFn("warthog_input", { dx, dy });
   }
 }

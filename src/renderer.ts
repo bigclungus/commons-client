@@ -349,8 +349,13 @@ export function render(state: WorldState, ctx: CanvasRenderingContext2D, frame: 
   const localChunkX = state.localPlayer?.chunkX ?? 0;
   const localChunkY = state.localPlayer?.chunkY ?? 0;
 
+  // Build warthog seat set for quick lookup (hide seated remote players — they appear as heads on the warthog)
+  const warthogSeatedIds = new Set(state.warthog?.seats.filter(Boolean) ?? []);
+
   for (const player of state.remotePlayers.values()) {
     if (player.chunkX !== localChunkX || player.chunkY !== localChunkY) continue;
+    // Skip remote players seated in the warthog — they're rendered as heads on the vehicle
+    if (warthogSeatedIds.has(player.socketId)) continue;
     drawPlayerBody(ctx, player.displayX, player.displayY, player.color, player.facing as Facing, player.hopFrame, player.isAway, false);
     drawPlayerLabel(ctx, player.displayX, player.displayY, player.name, player.hopFrame);
   }
@@ -367,8 +372,8 @@ export function render(state: WorldState, ctx: CanvasRenderingContext2D, frame: 
   // Warthog vehicle (drawn below local player so player appears inside)
   drawWarthog(ctx, state);
 
-  // Local player (drawn on top)
-  if (state.localPlayer) {
+  // Local player (drawn on top) — hidden when seated in warthog (rendered as head on vehicle)
+  if (state.localPlayer && !state.seatedInWarthog) {
     const p = state.localPlayer;
     drawPlayerBody(ctx, p.x, p.y, p.color, p.facing as Facing, p.hopFrame, p.isAway, true);
     drawPlayerLabel(ctx, p.x, p.y, p.name, p.hopFrame);
