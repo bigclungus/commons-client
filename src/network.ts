@@ -10,6 +10,7 @@ import { addRemotePlayerSnapshot } from "./entities/remote-player.ts";
 import { addNPCSnapshot } from "./entities/npc.ts";
 import { getChunk } from "./map/chunk.ts";
 import { invalidateTileCache } from "./map/renderer.ts";
+import { mergeServerWornPaths } from "./map/worn-paths.ts";
 
 const RECONNECT_DELAY_MS = 3000;
 
@@ -233,6 +234,11 @@ function handleTick(msg: any): void {
   // Warthog state (delta: only sent when changed)
   if (msg.warthog) {
     state.warthog = msg.warthog as WarthogState;
+  }
+
+  // Worn paths (on-join only): merge server-side counts into local store
+  if (msg.wornPaths && Array.isArray(msg.wornPaths)) {
+    mergeServerWornPaths(msg.wornPaths);
   }
 }
 

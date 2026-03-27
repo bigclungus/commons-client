@@ -1,9 +1,9 @@
 // map/worn-paths.ts — Worn path tile tracking and rendering
 //
-// Worn paths are tracked client-side in localStorage.
-// main.ts also sends a worn_path WS message to the server on each tile visit;
-// the server writes these to SQLite for analytics but does NOT broadcast them
-// back to clients — each client maintains its own independent local view.
+// Worn paths are tracked both client-side (localStorage) and server-side (SQLite).
+// main.ts sends a worn_path WS message to the server on each tile visit.
+// On join, the server sends accumulated worn path counts for the chunk; the client
+// merges them (taking the max) so all players see the shared world state.
 //
 // Visit thresholds (matching V1):
 //   >= 10 visits → "worn" (slight dark overlay)
@@ -48,6 +48,21 @@ if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", () => {
     saveStore();
   });
+}
+
+// Called on join to merge server-side worn path counts into local store.
+// Takes the max of server and local so neither is lost.
+export function mergeServerWornPaths(
+  tiles: { tileX: number; tileY: number; visitCount: number }[]
+): void {
+  for (const { tileX, tileY, visitCount } of tiles) {
+    const key = `${tileX},${tileY}`;
+    const local = store.counts[key] ?? 0;
+    if (visitCount > local) {
+      store.counts[key] = visitCount;
+    }
+  }
+  saveStore();
 }
 
 // Called by main.ts when the local player moves
