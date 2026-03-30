@@ -16,6 +16,7 @@ import { recordTileVisit } from "./map/worn-paths.ts";
 import { render } from "./renderer.ts";
 import { initChatModal, checkNPCClick } from "./ui/chat-modal.ts";
 import { initCongressModal, tickCongressModal } from "./ui/congress-modal.ts";
+import { initDungeonModal, tickDungeonModal } from "./ui/dungeon-modal.ts";
 import { validateSprites } from "./sprites.ts";
 
 const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
@@ -28,6 +29,7 @@ const state = createWorldState();
 initInput();
 initChatModal();
 initCongressModal();
+initDungeonModal();
 initWarthogInput(state);
 initWalkerPolling(state);
 
@@ -225,6 +227,9 @@ function loop(now: number): void {
 
   // Congress building entry check
   tickCongressModal(state);
+
+  // Dungeon entrance entry check
+  tickDungeonModal(state);
 
   // Render
   render(state, ctx, state.frame);

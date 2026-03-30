@@ -187,6 +187,13 @@ export const NPC_HIT_RADIUS = 14;
 export const CONGRESS_BUILDING_COL = 5;  // tile column of the building
 export const CONGRESS_BUILDING_LABEL_ROW = 2; // tile row of the name label above the door
 
+// Dungeon entrance tile location in chunk (0,0) — top-right corner.
+// Building occupies rows 2–6, cols 40–47. Doorway at col 43.
+export const DUNGEON_BUILDING_COL = 43;        // tile column of dungeon doorway
+export const DUNGEON_BUILDING_LABEL_ROW = 2;   // tile row of label above dungeon entrance
+export const DUNGEON_BUILDING_COL_MIN = 40;    // left edge of dungeon building block
+export const DUNGEON_BUILDING_COL_MAX = 47;    // right edge of dungeon building block
+
 export const INTERPOLATION_DELAY_MS = 100;
 export const SNAPSHOT_BUFFER_SIZE = 8;
 export const PENDING_INPUT_CAP = 120;

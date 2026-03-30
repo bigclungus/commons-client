@@ -1,7 +1,7 @@
 // map/renderer.ts — Tile rendering with offscreen cache, season-aware colors
 // Pure: no globals, no side effects, no state mutation.
 
-import { TILE, COLS, ROWS } from "../state.ts";
+import { TILE, COLS, ROWS, DUNGEON_BUILDING_COL_MIN, DUNGEON_BUILDING_COL_MAX } from "../state.ts";
 import {
   TILE_GRASS, TILE_PATH, TILE_WATER, TILE_BUILDING, TILE_TREE, TILE_ROCK, TILE_FOUNTAIN,
 } from "./chunk.ts";
@@ -176,6 +176,68 @@ function drawTile(
             ctx.fillStyle = "rgba(240,208,96,0.4)";
             ctx.fillRect(x + 3, y + 3, 9, 2);
           }
+        }
+      } else if (ty >= 2 && ty <= 6 && tx >= DUNGEON_BUILDING_COL_MIN && tx <= DUNGEON_BUILDING_COL_MAX) {
+        // Dungeon entrance building — top-right corner (rows 2-6, cols 40-47)
+        // Dark stone walls
+        ctx.fillStyle = "#1a1a1a";
+        ctx.fillRect(x, y, TILE, TILE);
+        ctx.fillStyle = "#2a2a2a";
+        ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
+
+        // Stone block texture: mortar lines
+        ctx.fillStyle = "#111";
+        ctx.fillRect(x, y + TILE / 2, TILE, 1);
+        const brickOffset = (ty % 2 === 0) ? 0 : TILE / 2;
+        ctx.fillRect(x + brickOffset, y, 1, TILE);
+
+        if (ty === 2) {
+          // Battlements / crenellations on top row
+          ctx.fillStyle = "#3a3a3a";
+          ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
+          // Merlon notch pattern
+          if ((tx % 2) === 0) {
+            ctx.fillStyle = "#0a0a0a";
+            ctx.fillRect(x + 4, y, TILE - 8, 8);
+          } else {
+            ctx.fillStyle = "#3a3a3a";
+            ctx.fillRect(x + 1, y + 1, TILE - 2, 8);
+          }
+        } else if (ty === 6) {
+          // Bottom row: gate arch base / steps
+          ctx.fillStyle = "#222";
+          ctx.fillRect(x, y + 14, TILE, TILE - 14);
+          ctx.fillStyle = "#2e2e2e";
+          ctx.fillRect(x, y + 10, TILE, 4);
+        }
+
+        // Torch sconces on col 41 and 46, rows 4-5
+        if ((tx === 41 || tx === 46) && (ty === 4 || ty === 5)) {
+          ctx.fillStyle = "#8b4513";
+          ctx.fillRect(x + 8, y + 2, 3, 8);
+          // Flame flicker (static for cached tile)
+          ctx.fillStyle = "rgba(255,140,0,0.85)";
+          ctx.fillRect(x + 7, y, 5, 5);
+          ctx.fillStyle = "rgba(255,220,0,0.6)";
+          ctx.fillRect(x + 8, y + 1, 3, 3);
+        }
+
+        // Dungeon doorway arch at tx=43, rows 5-6
+        if (tx === 43 && (ty === 5 || ty === 6)) {
+          // Arch opening (void black)
+          ctx.fillStyle = "#000";
+          ctx.fillRect(x + 2, y + (ty === 5 ? 3 : 0), 12, ty === 5 ? TILE - 3 : 14);
+          // Stone arch surround
+          ctx.fillStyle = "#3a3030";
+          ctx.fillRect(x + 1, y + (ty === 5 ? 2 : 0), 2, ty === 5 ? TILE - 2 : 14);
+          ctx.fillRect(x + 14, y + (ty === 5 ? 2 : 0), 2, ty === 5 ? TILE - 2 : 14);
+          if (ty === 5) {
+            ctx.fillStyle = "#3a3030";
+            ctx.fillRect(x + 2, y + 2, 12, 2);
+          }
+          // Eerie green glow from the void
+          ctx.fillStyle = "rgba(0,80,30,0.22)";
+          ctx.fillRect(x + 3, y + (ty === 5 ? 5 : 0), 10, ty === 5 ? TILE - 5 : 14);
         }
       } else {
         // Generic building tile
