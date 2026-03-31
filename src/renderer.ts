@@ -4,7 +4,8 @@
 import { WorldState, LocalPlayer, RemotePlayer, NPC, Facing, TILE, CANVAS_W, CANVAS_H, NPC_HIT_RADIUS,
   CONGRESS_BUILDING_COL, CONGRESS_BUILDING_LABEL_ROW,
   DUNGEON_BUILDING_COL, DUNGEON_BUILDING_LABEL_ROW,
-  DUNGEON_BUILDING_COL_MIN, DUNGEON_BUILDING_COL_MAX } from "./state.ts";
+  DUNGEON_BUILDING_COL_MIN, DUNGEON_BUILDING_COL_MAX,
+  LEADERBOARD_COL, LEADERBOARD_ROW } from "./state.ts";
 import { getOrBuildTileCache, getSeason, getTileColors, drawTallSprites } from "./map/renderer.ts";
 import { getWinner, getSpriteId, NPC_DISPLAY_NAMES } from "./sprites.ts";
 import { drawWarthog } from "./entities/warthog.ts";
@@ -408,6 +409,32 @@ export function render(state: WorldState, ctx: CanvasRenderingContext2D, frame: 
     ctx.fillStyle = "#a0ffa0";
     ctx.fillText("⚔ DUNGEON", DUNGEON_BUILDING_COL * TILE + TILE / 2, DUNGEON_BUILDING_LABEL_ROW * TILE - 3);
     ctx.restore();
+
+    // Leaderboard board object at (LEADERBOARD_COL, LEADERBOARD_ROW)
+    {
+      const bx = LEADERBOARD_COL * TILE;
+      const by = LEADERBOARD_ROW * TILE;
+      // Post
+      ctx.save();
+      ctx.fillStyle = "#6b4226";
+      ctx.fillRect(bx + 8, by - 4, 3, TILE + 4); // vertical post
+      // Board face
+      ctx.fillStyle = "#2a1a0a";
+      ctx.strokeStyle = "#8b6433";
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(bx - 2, by - 12, TILE + 4, 12);
+      ctx.strokeRect(bx - 2, by - 12, TILE + 4, 12);
+      // Trophy icon
+      ctx.font = "6px monospace";
+      ctx.fillStyle = "#d4af37";
+      ctx.textAlign = "center";
+      ctx.fillText("🏆", bx + TILE / 2, by - 3);
+      // Label below
+      ctx.font = "5px monospace";
+      ctx.fillStyle = "#a08040";
+      ctx.fillText("LEADERBOARD", bx + TILE / 2, by + 8);
+      ctx.restore();
+    }
 
     // Congress flag when session is active
     if (state.congress.active) {

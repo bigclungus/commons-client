@@ -194,6 +194,13 @@ export const DUNGEON_BUILDING_LABEL_ROW = 2;   // tile row of label above dungeo
 export const DUNGEON_BUILDING_COL_MIN = 40;    // left edge of dungeon building block
 export const DUNGEON_BUILDING_COL_MAX = 47;    // right edge of dungeon building block
 
+// Leaderboard board tile location in chunk (0,0) — between main path and dungeon entrance.
+// Placed at col 36, row 10: open grass area, visible from the approach to the dungeon.
+export const LEADERBOARD_COL = 36;
+export const LEADERBOARD_ROW = 10;
+// Proximity radius in tiles — show leaderboard UI when player is within this distance
+export const LEADERBOARD_PROXIMITY_TILES = 3;
+
 export const INTERPOLATION_DELAY_MS = 100;
 export const SNAPSHOT_BUFFER_SIZE = 8;
 export const PENDING_INPUT_CAP = 120;

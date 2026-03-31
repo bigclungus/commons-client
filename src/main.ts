@@ -17,6 +17,7 @@ import { render } from "./renderer.ts";
 import { initChatModal, checkNPCClick } from "./ui/chat-modal.ts";
 import { initCongressModal, tickCongressModal } from "./ui/congress-modal.ts";
 import { initDungeonModal, tickDungeonModal } from "./ui/dungeon-modal.ts";
+import { initLeaderboardModal, tickLeaderboardModal } from "./ui/leaderboard-modal.ts";
 import { validateSprites } from "./sprites.ts";
 
 const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
@@ -30,6 +31,7 @@ initInput();
 initChatModal();
 initCongressModal();
 initDungeonModal();
+initLeaderboardModal();
 initWarthogInput(state);
 initWalkerPolling(state);
 
@@ -230,6 +232,9 @@ function loop(now: number): void {
 
   // Dungeon entrance entry check
   tickDungeonModal(state);
+
+  // Leaderboard proximity check
+  tickLeaderboardModal(state);
 
   // Render
   render(state, ctx, state.frame);

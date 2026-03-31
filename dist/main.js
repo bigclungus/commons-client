@@ -8,6 +8,13 @@ var PLAYER_SPEED = 108;
 var NPC_HIT_RADIUS = 14;
 var CONGRESS_BUILDING_COL = 5;
 var CONGRESS_BUILDING_LABEL_ROW = 2;
+var DUNGEON_BUILDING_COL = 43;
+var DUNGEON_BUILDING_LABEL_ROW = 2;
+var DUNGEON_BUILDING_COL_MIN = 40;
+var DUNGEON_BUILDING_COL_MAX = 47;
+var LEADERBOARD_COL = 36;
+var LEADERBOARD_ROW = 10;
+var LEADERBOARD_PROXIMITY_TILES = 3;
 var INTERPOLATION_DELAY_MS = 100;
 var SNAPSHOT_BUFFER_SIZE = 8;
 var PENDING_INPUT_CAP = 120;
@@ -773,6 +780,7 @@ function generateChunk00() {
         m[r][c] = TILE_BUILDING;
     }
   }
+  m[7][43] = TILE_PATH;
   for (let r = 26;r <= 31; r++) {
     for (let c = 38;c <= 46; c++) {
       if (r < ROWS && c < COLS)
@@ -1080,6 +1088,52 @@ function drawTile(ctx, tile, x, y, tx, ty, colors, frame) {
             ctx.fillRect(x + 3, y + 3, 9, 2);
           }
         }
+      } else if (ty >= 2 && ty <= 6 && tx >= DUNGEON_BUILDING_COL_MIN && tx <= DUNGEON_BUILDING_COL_MAX) {
+        ctx.fillStyle = "#1a1a1a";
+        ctx.fillRect(x, y, TILE, TILE);
+        ctx.fillStyle = "#2a2a2a";
+        ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
+        ctx.fillStyle = "#111";
+        ctx.fillRect(x, y + TILE / 2, TILE, 1);
+        const brickOffset = ty % 2 === 0 ? 0 : TILE / 2;
+        ctx.fillRect(x + brickOffset, y, 1, TILE);
+        if (ty === 2) {
+          ctx.fillStyle = "#3a3a3a";
+          ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
+          if (tx % 2 === 0) {
+            ctx.fillStyle = "#0a0a0a";
+            ctx.fillRect(x + 4, y, TILE - 8, 8);
+          } else {
+            ctx.fillStyle = "#3a3a3a";
+            ctx.fillRect(x + 1, y + 1, TILE - 2, 8);
+          }
+        } else if (ty === 6) {
+          ctx.fillStyle = "#222";
+          ctx.fillRect(x, y + 14, TILE, TILE - 14);
+          ctx.fillStyle = "#2e2e2e";
+          ctx.fillRect(x, y + 10, TILE, 4);
+        }
+        if ((tx === 41 || tx === 46) && (ty === 4 || ty === 5)) {
+          ctx.fillStyle = "#8b4513";
+          ctx.fillRect(x + 8, y + 2, 3, 8);
+          ctx.fillStyle = "rgba(255,140,0,0.85)";
+          ctx.fillRect(x + 7, y, 5, 5);
+          ctx.fillStyle = "rgba(255,220,0,0.6)";
+          ctx.fillRect(x + 8, y + 1, 3, 3);
+        }
+        if (tx === 43 && (ty === 5 || ty === 6)) {
+          ctx.fillStyle = "#000";
+          ctx.fillRect(x + 2, y + (ty === 5 ? 3 : 0), 12, ty === 5 ? TILE - 3 : 14);
+          ctx.fillStyle = "#3a3030";
+          ctx.fillRect(x + 1, y + (ty === 5 ? 2 : 0), 2, ty === 5 ? TILE - 2 : 14);
+          ctx.fillRect(x + 14, y + (ty === 5 ? 2 : 0), 2, ty === 5 ? TILE - 2 : 14);
+          if (ty === 5) {
+            ctx.fillStyle = "#3a3030";
+            ctx.fillRect(x + 2, y + 2, 12, 2);
+          }
+          ctx.fillStyle = "rgba(0,80,30,0.22)";
+          ctx.fillRect(x + 3, y + (ty === 5 ? 5 : 0), 10, ty === 5 ? TILE - 5 : 14);
+        }
       } else {
         ctx.fillStyle = colors.building;
         ctx.fillRect(x, y, TILE, TILE);
@@ -1096,19 +1150,11 @@ function drawTile(ctx, tile, x, y, tx, ty, colors, frame) {
       ctx.fillRect(x, y, TILE, TILE);
       ctx.fillStyle = "#5a3a1a";
       ctx.fillRect(x + 8, y + 10, 4, TILE - 10);
-      ctx.fillStyle = colors.tree;
-      ctx.fillRect(x + 2, y + 1, TILE - 4, 12);
-      ctx.fillStyle = colors.treeTop;
-      ctx.fillRect(x + 4, y + 1, TILE - 8, 8);
       break;
     }
     case TILE_ROCK:
       ctx.fillStyle = colors.grass;
       ctx.fillRect(x, y, TILE, TILE);
-      ctx.fillStyle = colors.rock;
-      ctx.fillRect(x + 3, y + 4, TILE - 6, TILE - 8);
-      ctx.fillStyle = colors.rockLight;
-      ctx.fillRect(x + 5, y + 5, 5, 4);
       break;
     case TILE_FOUNTAIN: {
       ctx.fillStyle = colors.path;
@@ -1145,24 +1191,54 @@ function getOrBuildTileCache(map, chunkX, chunkY, season) {
 function invalidateTileCache() {
   tileCache = null;
 }
+function drawTallSprites(ctx, map, season) {
+  const colors = getTileColors(season);
+  for (let r = 0;r < ROWS; r++) {
+    for (let c = 0;c < COLS; c++) {
+      const tile = map[r][c];
+      const x = c * TILE;
+      const y = r * TILE;
+      if (tile === TILE_TREE) {
+        ctx.fillStyle = colors.tree;
+        ctx.fillRect(x + 2, y + 1, TILE - 4, 12);
+        ctx.fillStyle = colors.treeTop;
+        ctx.fillRect(x + 4, y + 1, TILE - 8, 8);
+      } else if (tile === TILE_ROCK) {
+        ctx.fillStyle = colors.rock;
+        ctx.fillRect(x + 3, y + 4, TILE - 6, TILE - 8);
+        ctx.fillStyle = colors.rockLight;
+        ctx.fillRect(x + 5, y + 5, 5, 4);
+      }
+    }
+  }
+}
 
 // src/map/worn-paths.ts
 var STORAGE_KEY = "commons_worn_tiles";
 var WORN_THRESHOLD = 10;
 var DIRT_THRESHOLD = 30;
+var SAVE_EVERY_N_VISITS = 30;
 function loadStore() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw)
-      return JSON.parse(raw);
-  } catch {}
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && typeof parsed.counts === "object" && parsed.counts !== null) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn("[worn-paths] corrupt localStorage, resetting:", e);
+  }
   return { counts: {} };
 }
 var store = loadStore();
 function saveStore() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  } catch {}
+  } catch (e) {
+    console.warn("[worn-paths] localStorage write failed:", e);
+  }
 }
 if (typeof window !== "undefined") {
   window.addEventListener("visibilitychange", () => {
@@ -1186,7 +1262,7 @@ function mergeServerWornPaths(tiles) {
 function recordTileVisit(tileX, tileY) {
   const key = `${tileX},${tileY}`;
   store.counts[key] = (store.counts[key] ?? 0) + 1;
-  if (store.counts[key] % 30 === 0) {
+  if (store.counts[key] % SAVE_EVERY_N_VISITS === 0) {
     saveStore();
   }
 }
@@ -1222,11 +1298,12 @@ function drawWornPaths(ctx, map) {
 
 // src/network.ts
 var RECONNECT_DELAY_MS = 3000;
+var decoder = new TextDecoder;
 var MOVE_BUFFER_SIZE = 3;
 var ws = null;
 var reconnectTimer = null;
 var state2;
-function sendMove(state3, dx, dy) {
+function sendMove(state3) {
   if (!ws || ws.readyState !== WebSocket.OPEN || !state3.localPlayer)
     return;
   const player = state3.localPlayer;
@@ -1273,7 +1350,6 @@ function handleWelcome(msg) {
 }
 var EMA_ALPHA = 0.1;
 var serverTimeOffsetEMA = null;
-var serverTimeOffsetSamples = 0;
 function serverTsToClientTs(serverTs) {
   const sample = performance.now() - serverTs;
   if (serverTimeOffsetEMA === null) {
@@ -1281,7 +1357,6 @@ function serverTsToClientTs(serverTs) {
   } else {
     serverTimeOffsetEMA = EMA_ALPHA * sample + (1 - EMA_ALPHA) * serverTimeOffsetEMA;
   }
-  serverTimeOffsetSamples++;
   return serverTs + serverTimeOffsetEMA;
 }
 function handleTick(msg) {
@@ -1468,7 +1543,7 @@ function handleNPCUpdate(msg) {
 function onMessage(e) {
   let msg;
   try {
-    const raw = e.data instanceof ArrayBuffer ? new TextDecoder().decode(e.data) : e.data;
+    const raw = e.data instanceof ArrayBuffer ? decoder.decode(e.data) : e.data;
     msg = JSON.parse(raw);
   } catch {
     console.warn("[network] failed to parse message:", e.data);
@@ -2234,6 +2309,9 @@ function render(state3, ctx, frame) {
     drawPlayerBody(ctx, p.x, p.y, p.color, p.facing, p.hopFrame, p.isAway, true);
     drawPlayerLabel(ctx, p.x, p.y, p.name, p.hopFrame);
   }
+  if (state3.map) {
+    drawTallSprites(ctx, state3.map, season);
+  }
   if (localChunkX === 0 && localChunkY === 0) {
     ctx.save();
     ctx.font = "bold 8px monospace";
@@ -2243,6 +2321,34 @@ function render(state3, ctx, frame) {
     ctx.fillStyle = "#c8c8e8";
     ctx.fillText("CONGRESS", CONGRESS_BUILDING_COL * TILE + TILE / 2, CONGRESS_BUILDING_LABEL_ROW * TILE - 3);
     ctx.restore();
+    ctx.save();
+    ctx.font = "bold 8px monospace";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillText("⚔ DUNGEON", DUNGEON_BUILDING_COL * TILE + TILE / 2 + 1, DUNGEON_BUILDING_LABEL_ROW * TILE - 2);
+    ctx.fillStyle = "#a0ffa0";
+    ctx.fillText("⚔ DUNGEON", DUNGEON_BUILDING_COL * TILE + TILE / 2, DUNGEON_BUILDING_LABEL_ROW * TILE - 3);
+    ctx.restore();
+    {
+      const bx = LEADERBOARD_COL * TILE;
+      const by = LEADERBOARD_ROW * TILE;
+      ctx.save();
+      ctx.fillStyle = "#6b4226";
+      ctx.fillRect(bx + 8, by - 4, 3, TILE + 4);
+      ctx.fillStyle = "#2a1a0a";
+      ctx.strokeStyle = "#8b6433";
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(bx - 2, by - 12, TILE + 4, 12);
+      ctx.strokeRect(bx - 2, by - 12, TILE + 4, 12);
+      ctx.font = "6px monospace";
+      ctx.fillStyle = "#d4af37";
+      ctx.textAlign = "center";
+      ctx.fillText("\uD83C\uDFC6", bx + TILE / 2, by - 3);
+      ctx.font = "5px monospace";
+      ctx.fillStyle = "#a08040";
+      ctx.fillText("LEADERBOARD", bx + TILE / 2, by + 8);
+      ctx.restore();
+    }
     if (state3.congress.active) {
       ctx.save();
       const fx = CONGRESS_BUILDING_COL * TILE;
@@ -2399,6 +2505,410 @@ function tickCongressModal(state3) {
   }
 }
 
+// src/ui/dungeon-modal.ts
+var DUNGEON_BUILDING_ROW_MIN = 5;
+var DUNGEON_BUILDING_ROW_MAX = 8;
+var _open2 = false;
+var _lastTriggerTile2 = "";
+var overlay3 = null;
+function buildModal2() {
+  overlay3 = document.createElement("div");
+  overlay3.id = "cv2-dungeon-overlay";
+  overlay3.style.cssText = `
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.80);
+    z-index: 1100;
+    align-items: center;
+    justify-content: center;
+  `;
+  const modal = document.createElement("div");
+  modal.style.cssText = `
+    background: #0d0d0d;
+    border: 2px solid #3a5a3a;
+    border-radius: 10px;
+    padding: 28px 32px 24px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    color: #a0d0a0;
+    max-width: 380px;
+    box-shadow: 0 0 48px rgba(0,80,20,0.35);
+  `;
+  const icon = document.createElement("div");
+  icon.style.cssText = "font-size: 28px; margin-bottom: 12px;";
+  icon.textContent = "⚔️";
+  const title = document.createElement("div");
+  title.style.cssText = "font-size: 16px; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 10px; color: #80c080;";
+  title.textContent = "DUNGEON";
+  const body = document.createElement("div");
+  body.style.cssText = "font-size: 12px; color: #607060; line-height: 1.6; margin-bottom: 18px;";
+  body.innerHTML = "A cold wind rises from the depths.<br>Few who enter return unchanged.";
+  const enterBtn = document.createElement("button");
+  enterBtn.textContent = "Enter the Dungeon →";
+  enterBtn.style.cssText = `
+    display: inline-block;
+    background: #0a1a0a;
+    border: 1px solid #3a5a3a;
+    color: #80c080;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 7px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 14px;
+    transition: background 0.15s;
+  `;
+  enterBtn.addEventListener("mouseover", () => {
+    enterBtn.style.background = "rgba(0,100,30,0.25)";
+  });
+  enterBtn.addEventListener("mouseout", () => {
+    enterBtn.style.background = "#0a1a0a";
+  });
+  enterBtn.addEventListener("click", () => {
+    window.location.href = "/clungiverse";
+  });
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "✕";
+  closeBtn.title = "Close (Esc)";
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #3a5a3a;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+  `;
+  closeBtn.addEventListener("click", closeModal3);
+  modal.style.position = "relative";
+  modal.appendChild(closeBtn);
+  modal.appendChild(icon);
+  modal.appendChild(title);
+  modal.appendChild(body);
+  modal.appendChild(enterBtn);
+  const dismissNote = document.createElement("div");
+  dismissNote.style.cssText = "font-size: 10px; color: #2a3a2a; margin-top: 4px;";
+  dismissNote.textContent = "Press Esc or click outside to dismiss";
+  modal.appendChild(dismissNote);
+  overlay3.appendChild(modal);
+  document.body.appendChild(overlay3);
+  overlay3.addEventListener("click", (e) => {
+    if (e.target === overlay3)
+      closeModal3();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && _open2) {
+      e.stopPropagation();
+      closeModal3();
+    }
+  });
+}
+function openModal3() {
+  if (!overlay3)
+    return;
+  _open2 = true;
+  overlay3.style.display = "flex";
+}
+function closeModal3() {
+  if (!overlay3)
+    return;
+  _open2 = false;
+  overlay3.style.display = "none";
+  _lastTriggerTile2 = "";
+}
+function initDungeonModal() {
+  buildModal2();
+}
+function tickDungeonModal(state3) {
+  const player = state3.localPlayer;
+  if (!player)
+    return;
+  if (state3.localPlayer.chunkX !== 0 || state3.localPlayer.chunkY !== 0)
+    return;
+  const tileX = Math.floor(player.x / TILE);
+  const tileY = Math.floor(player.y / TILE);
+  const inDoorway = tileX === DUNGEON_BUILDING_COL && tileY >= DUNGEON_BUILDING_ROW_MIN && tileY <= DUNGEON_BUILDING_ROW_MAX;
+  if (inDoorway) {
+    const key = `${tileX},${tileY}`;
+    if (!_open2 && key !== _lastTriggerTile2) {
+      _lastTriggerTile2 = key;
+      openModal3();
+    }
+  }
+}
+
+// src/ui/leaderboard-modal.ts
+var _open3 = false;
+var _lastProximityKey = "";
+var _fetchInFlight = false;
+var overlay4 = null;
+var entriesContainer = null;
+var loadingEl = null;
+function buildModal3() {
+  overlay4 = document.createElement("div");
+  overlay4.id = "cv2-leaderboard-overlay";
+  overlay4.style.cssText = `
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.80);
+    z-index: 1100;
+    align-items: center;
+    justify-content: center;
+  `;
+  const panel = document.createElement("div");
+  panel.style.cssText = `
+    background: #0d0d1a;
+    border: 2px solid #4a3a8a;
+    border-radius: 10px;
+    padding: 28px 32px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #c0b0e0;
+    width: 520px;
+    max-width: 96vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 0 48px rgba(60,20,100,0.45);
+    position: relative;
+  `;
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "✕";
+  closeBtn.title = "Close (Esc)";
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #6a5a9a;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+  `;
+  closeBtn.addEventListener("click", closeModal4);
+  const icon = document.createElement("div");
+  icon.style.cssText = "font-size: 24px; margin-bottom: 10px; text-align: center;";
+  icon.textContent = "\uD83C\uDFC6";
+  const title = document.createElement("div");
+  title.style.cssText = `
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    margin-bottom: 4px;
+    color: #a090d0;
+    text-align: center;
+  `;
+  title.textContent = "DUNGEON LEADERBOARD";
+  const subtitle = document.createElement("div");
+  subtitle.style.cssText = "font-size: 10px; color: #5a4a7a; text-align: center; margin-bottom: 20px;";
+  subtitle.textContent = "Top 10 runs — ranked by deepest floor reached";
+  loadingEl = document.createElement("div");
+  loadingEl.style.cssText = "font-size: 12px; color: #5a4a7a; text-align: center; padding: 20px 0;";
+  loadingEl.textContent = "Loading...";
+  entriesContainer = document.createElement("div");
+  panel.appendChild(closeBtn);
+  panel.appendChild(icon);
+  panel.appendChild(title);
+  panel.appendChild(subtitle);
+  panel.appendChild(loadingEl);
+  panel.appendChild(entriesContainer);
+  const dismissNote = document.createElement("div");
+  dismissNote.style.cssText = "font-size: 10px; color: #2a2a4a; text-align: center; margin-top: 16px;";
+  dismissNote.textContent = "Press Esc or click outside to dismiss";
+  panel.appendChild(dismissNote);
+  overlay4.appendChild(panel);
+  document.body.appendChild(overlay4);
+  overlay4.addEventListener("click", (e) => {
+    if (e.target === overlay4)
+      closeModal4();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && _open3) {
+      e.stopPropagation();
+      closeModal4();
+    }
+  });
+}
+function formatDuration(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
+function formatDate(ts) {
+  const d = new Date(ts);
+  const yr = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${yr}-${mo}-${day}`;
+}
+function renderEntries(entries) {
+  if (!entriesContainer || !loadingEl)
+    return;
+  loadingEl.style.display = "none";
+  entriesContainer.innerHTML = "";
+  if (entries.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "font-size: 12px; color: #5a4a7a; text-align: center; padding: 20px 0;";
+    empty.textContent = "No runs recorded yet. Be the first to venture into the dungeon!";
+    entriesContainer.appendChild(empty);
+    return;
+  }
+  for (const entry of entries) {
+    const row = document.createElement("div");
+    const isVictory = entry.outcome === "victory";
+    row.style.cssText = `
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #1e1830;
+    `;
+    const rankBadge = document.createElement("div");
+    let rankColor = "#4a3a8a";
+    if (entry.rank === 1)
+      rankColor = "#d4af37";
+    else if (entry.rank === 2)
+      rankColor = "#aaa9ad";
+    else if (entry.rank === 3)
+      rankColor = "#cd7f32";
+    rankBadge.style.cssText = `
+      min-width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      background: ${rankColor}22;
+      border: 1px solid ${rankColor};
+      color: ${rankColor};
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    `;
+    rankBadge.textContent = `#${entry.rank}`;
+    const info = document.createElement("div");
+    info.style.cssText = "flex: 1; min-width: 0;";
+    const topLine = document.createElement("div");
+    topLine.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 4px;";
+    const floorSpan = document.createElement("span");
+    floorSpan.style.cssText = `font-size: 13px; font-weight: 700; color: ${isVictory ? "#a0e0a0" : "#e0a0a0"};`;
+    floorSpan.textContent = `Floor ${entry.floorReached}`;
+    const outcomeTag = document.createElement("span");
+    outcomeTag.style.cssText = `
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: ${isVictory ? "#0d2a0d" : "#2a0d0d"};
+      border: 1px solid ${isVictory ? "#3a7a3a" : "#7a3a3a"};
+      color: ${isVictory ? "#5aaa5a" : "#aa5a5a"};
+    `;
+    outcomeTag.textContent = isVictory ? "VICTORY" : "DEFEATED";
+    const durationSpan = document.createElement("span");
+    durationSpan.style.cssText = "font-size: 10px; color: #5a4a7a; margin-left: auto;";
+    durationSpan.textContent = formatDuration(entry.durationMs);
+    topLine.appendChild(floorSpan);
+    topLine.appendChild(outcomeTag);
+    topLine.appendChild(durationSpan);
+    const partyLine = document.createElement("div");
+    partyLine.style.cssText = "display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 2px;";
+    for (const member of entry.party) {
+      const chip = document.createElement("span");
+      chip.style.cssText = `
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 10px;
+        background: #1a1430;
+        border: 1px solid #3a2a5a;
+        color: #9080b0;
+      `;
+      chip.textContent = `${member.name} (${member.personaSlug.replace(/_/g, " ")})`;
+      partyLine.appendChild(chip);
+    }
+    const dateLine = document.createElement("div");
+    dateLine.style.cssText = "font-size: 9px; color: #3a2a5a; margin-top: 2px;";
+    dateLine.textContent = formatDate(entry.runAt);
+    info.appendChild(topLine);
+    info.appendChild(partyLine);
+    info.appendChild(dateLine);
+    row.appendChild(rankBadge);
+    row.appendChild(info);
+    entriesContainer.appendChild(row);
+  }
+}
+function renderError(message) {
+  if (!entriesContainer || !loadingEl)
+    return;
+  loadingEl.style.display = "none";
+  entriesContainer.innerHTML = "";
+  const errEl = document.createElement("div");
+  errEl.style.cssText = "font-size: 12px; color: #aa5a5a; text-align: center; padding: 20px 0;";
+  errEl.textContent = `Failed to load leaderboard: ${message}`;
+  entriesContainer.appendChild(errEl);
+}
+async function fetchLeaderboard() {
+  if (_fetchInFlight)
+    return;
+  _fetchInFlight = true;
+  if (entriesContainer)
+    entriesContainer.innerHTML = "";
+  if (loadingEl)
+    loadingEl.style.display = "block";
+  try {
+    const res = await fetch("/api/clungiverse/leaderboard");
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const entries = await res.json();
+    renderEntries(entries);
+  } catch (err) {
+    renderError(err instanceof Error ? err.message : String(err));
+  } finally {
+    _fetchInFlight = false;
+  }
+}
+function openModal4() {
+  if (!overlay4)
+    return;
+  _open3 = true;
+  overlay4.style.display = "flex";
+  fetchLeaderboard().catch((err) => {
+    console.error("[leaderboard] fetchLeaderboard failed:", err);
+  });
+}
+function closeModal4() {
+  if (!overlay4)
+    return;
+  _open3 = false;
+  overlay4.style.display = "none";
+  _lastProximityKey = "";
+}
+function initLeaderboardModal() {
+  buildModal3();
+}
+function tickLeaderboardModal(state3) {
+  const player = state3.localPlayer;
+  if (!player)
+    return;
+  if (player.chunkX !== 0 || player.chunkY !== 0)
+    return;
+  const playerTileX = Math.floor(player.x / TILE);
+  const playerTileY = Math.floor(player.y / TILE);
+  const dx = Math.abs(playerTileX - LEADERBOARD_COL);
+  const dy = Math.abs(playerTileY - LEADERBOARD_ROW);
+  const inProximity = dx <= LEADERBOARD_PROXIMITY_TILES && dy <= LEADERBOARD_PROXIMITY_TILES;
+  if (inProximity) {
+    const key = `${playerTileX},${playerTileY}`;
+    if (!_open3 && key !== _lastProximityKey) {
+      _lastProximityKey = key;
+      openModal4();
+    }
+  }
+}
+
 // src/main.ts
 var canvas = document.getElementById("game-canvas");
 var ctx = canvas.getContext("2d");
@@ -2406,6 +2916,8 @@ var state3 = createWorldState();
 initInput();
 initChatModal();
 initCongressModal();
+initDungeonModal();
+initLeaderboardModal();
 initWarthogInput(state3);
 initWalkerPolling(state3);
 var DRAG_THRESHOLD_MS = 250;
@@ -2518,7 +3030,7 @@ function loop(now) {
     if (now - lastMoveSent >= MOVE_SEND_INTERVAL_MS) {
       lastMoveSeq = state3.localPlayer.inputSeq;
       lastMoveSent = now;
-      sendMove(state3, dx, dy);
+      sendMove(state3);
     }
   }
   if (state3.localPlayer && state3.map) {
@@ -2545,6 +3057,8 @@ function loop(now) {
   tickNPCs(state3.npcs, now);
   tickWarthog(state3, (type, payload) => sendWarthog(type, payload));
   tickCongressModal(state3);
+  tickDungeonModal(state3);
+  tickLeaderboardModal(state3);
   render(state3, ctx, state3.frame);
   requestAnimationFrame(loop);
 }
